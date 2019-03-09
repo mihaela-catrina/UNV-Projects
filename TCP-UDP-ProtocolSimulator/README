@@ -1,0 +1,118 @@
+NUME : Catrina Mihaela-Florentina
+GRUPA : 323CB
+
+*******************************************************************************
+*************************		README      ***********************************
+*******************************************************************************
+
+    In cadrul temei am pornit de la laboratoarele 6,7,8. (^_^)
+    Pentru aceasta tema am utilizat structura clientData din server.h care
+contine campurile nume, prenume, password, pin, sold, connected (utilizat
+in server pentru a verifica daca un client fizic exista deja conectat),
+failed_attempts (pentru a retine numarul de incercari esuate de logare =>
+utilizat pentru unlock), associated_fd (socketul asociat unui client fizic 
+logat).
+    Obs : In server se foloseste un vector de transferuri pentru a stii daca
+     exista pentru un client un transfer in curs de confirmare.
+    Fisiere : server.c, client.c, server.h, client.h, lib.h (definire MACRO-uri
+comune)
+
+     Descriere client 
+*****************************
+	Pentru realizarea conexiunii cu serverul se instantiaza un socket TCP. De
+asemenea, se va crea un soket UDP, prin care se va comunica cu serverul pentru
+comanda de unlock. Dupa realizarea conexiunii si creearea socketului de udp
+intr-o bucla while se asteapta mesaje. Pe langa cele doua socket-uri construite
+se agauga in multimea de citire file descriptorul specific pentru STDIN. 
+	In bucla se verifica primirea de mesaje si pe ce socket se primesc mesaje.
+
+Daca se primesc mesaje pe file descriptorul pentru stdin (se citeste de la
+tastatura), pentru fiecare mesaj primit se verifica daca acesta este o comanda
+valida utilizand functia "check_command" ce returneaza valori asociate comenzi-
+lor descrise prin diferite macro-uri(ex: LOGIN, UNLOCK, UNKNOWN_COMMAND, etc.).
+Pasi verificare comanda:
+	-> verificare comanda ce necesita autentitificare
+		* necesita + client neautentificat => -1
+	-> verificare comanda cunscuta || parola pt. UNLOCK || confirmare TRANSFER
+		* LOGIN + client connectat => -2
+		* UNLOCK || parola UNLOCK => trimitere carte server
+		* LOGIN => trimitere carte server
+		* LOGOUT => trimitere carte server
+		* QUIT => trimite carte server si inchide clientul
+		* LISTSOLD => trimite carte server
+		* TRANSFER || confirmare transfer => trimite carte server
+	-> UNKNOWN_COMMAND => -10
+
+Daca se primesc mesaje pe socketul de TCP se afiseaza raspunsurile serverului
+si eventual se contecteaza, deconecteaza clientul pentru raspunsuri la comenzile
+de login sau logout.
+
+Daca se primesc mesaje pe socketul de UDP se afiseaza mesajele (corespunzatoare
+comenzii de unlock).
+
+
+	Descriere server
+***********************************
+	La fel ca in cazul clientului se construiesc socketii de tcp si udp pentru
+a permite conectarea clientilor. Pentru fiecare socket se face operatia de bind
+iar pentru tcp se apeleaza si functia de listen. Intr-o bucla while la fel ca
+in cazul clientului se verifica de pe ce socket se primeste mesajul.
+
+Daca se primesc mesaje pe socketul de TCP, un nou proces client incearca sa se
+conecteze la server.
+
+Daca se primesc mesaje pe soketul de UDP se va verifica mesajul primit pentru
+siguranta (putem primi doar  UNLOCK). Dupa verificare se verifica numarul de
+card pentru care se incearca unlock iar apoi se va incerca deblocarea utilizand
+functia de unlock_card. In functia de unlock_card initial se verifica tipul
+mesajului : "unlock nr_card" sau "numar_card parola_secreta". Pentru mesaj de
+tipul 1 se va trimite carte client cerere de confirmare. Pentru comanda de tip 2
+se verifica parola si numarul cardului, iar in cazul in care sunt corecte se va
+debloca cardul.
+
+Daca se primesc mesaje de la stdin se va verifica daca mesajul primit este
+"quit". In acest caz se vor deconecta clientii si se va inchide serverul.
+
+Daca se primesc mesaje de la un client intial se va verifica tipul comenzii 
+primite:
+	-> LOGIN 
+		* verificare numar card
+		* verificare client deja conectat
+		* se verifica pinul
+			- sunt corecte => se conecteaza clientul
+			- la conectarea clientului se va seta campul connected
+              din clientul conectat pe 1 pentru a verifica la o alta incercare
+              de logare 
+	-> QUIT 
+		* se deconecteaza clientul de la server
+	-> LOGOUT
+		* se deconecteaza clientul
+	-> LISTSOLD
+		* se verifica soldul clientului mapat cu file descriptorul
+		  de pe care se primeste mesajul si se trimite raspuns clientului
+	-> TRANSFER
+		* verificare client asociat cu procesul curent
+		* verificare numar card destinatar
+		* verificare sold suficient
+		* trimitere cerere de confirmare a transferului
+          - daca ajunge la trimiterea cererii de confirmare
+            se va retine transferul in derulare pe pozitia soketului
+            de la care s-a primit cererea in vectorul de transferuri
+          - la primirea confirmarii se va verifica daca exista acest transfer
+           
+
+	-> comanda necunoscuta si transfer in curs
+		* mesaj == "y" -> se realizeaza transferul care exista in vectorul
+          de transferuri pentru soketul de e care am primit confirmarea
+		* alt mesaj -> operatie anulata
+
+*******************************************************************************
+                            HAPPY ENDING ^_^
+*******************************************************************************
+
+
+
+
+
+
+
