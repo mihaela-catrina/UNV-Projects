@@ -1,0 +1,134 @@
+NUME: Catrina Mihaela-Florentina
+GRUPA: 323CB
+
+				README
+
+TASK 1
+=========================================================
+->	Limbaj de implementare : java
+->	Fisiere sursa: Transition.java, TuringMachine.java
+
+->	In fisierul Transition.java este implementata clasa Transition, avand un
+constructor ce va seta starea urmatoare, directia pe benzi, caracterele ce vor
+fi scrise si metode de getTape1Direction, respectiv getTape2Direction
+
+->	In fisierul TuringMachine este descrisa implementarea masinii Turing ce va 
+fi folosita.
+->	Clasa TuringMachine contine campurile proprii pentru datele citite din
+fisier. Tranzitiile vor fi stocate intr-un vector de tranzitii (transitionsArray),
+iar pozitia unei tranzitii in acest vector va fi data de un index aflat ca va-
+loare corespunzatoare unei chei din hashmap-ul "ht". La citirea unei trazitii
+se va crea o cheie prin concatenarea starii curente, a caracterelor curente de
+pe ambele benzi ( de exemplu, pentru tranzitia S0 a b S1 a H b R cheia rezultata
+este S0ab, iar indexul acestei tranzitii in vector va fi dat de aceasta cheie).
+->	In metoda createTuringMachine se citesc datele de intrare, care vor fi
+stocate in campurile clasei, respectiv in vectorul de tranzitii (prin utilizarea
+metodei de inserare in hashmap). Variabilele tape1 si tape2 retin sirul aflat
+pe banda initial.
+->	In metoda runTuringMachine se initializeaza starea curenta cu starea ini-
+tiala, si se parcurg cele doua "benzi" astfel:
+		*Se verifica daca starea curenta se afla printre starile finale, iar
+daca raspunsul este true "masina se opreste" (break).
+		*Se extrag caracterele si starea curenta si se "construieste" cheia
+utilizata pentru extragere tranzitiei potrivite din transitionsArray.
+		*Se fac schimbarile corespunzator tranzitiei obtinute.
+		*Se actualizeaza starea curenta si pozitiile pe benzi. 
+->	In metoda main se creeaza masina turing care va fi rulata. Se va scrie in
+fisierul de continutul final al celor doua benzi.
+
+
+
+TASK 2
+==========================================================
+->	Starea S0 = starea initiala 
+->	S1, S2, S3, S4 = stari specifice caracterelor a, b, c, respectiv d
+	(ex: Din S0 la citirea caracterului a se va trece in S1)
+->	S11, S22, S33, S44 = stari complementare
+	(Ele vor fi "reachable" doar daca in starile anterioare (S1 pentru S11) 
+	se ajunge la caracterul # de la finalul sirului)
+->	SC = starea "curata banda" 
+	(va pune # pe banda dupa aflarea caracterului dominant)
+->	SR = stare de "reverse"
+	(daca in starea S0 se ajunge la # (la finalul sirului) se vor faca mutari la
+	stanga pana la inceputul sirului pentru a se relua cautarea pe banda)
+
+->	Mod de implementare:
+	Din starea S0 se citeste primul caracter, se va scrie "~" si in functie de
+ valoarea acestuia se va trece in starea S1, S2, S3 sau S4 (luam ca exemplu
+ citirea caracterului "a" => ajungem in starea S1). In starile S1,2,3,4, daca
+se citeste "~" sau caracterul propriu starii ("a" pentru S1) nu se schimba nimic
+si ne deplasam la dreapta pana la intalnirea primul caracter diferit. In acest
+moment se pune "~" si in locul caracterului diferit si revenim in S0 de unde
+se va relua ciclul. Daca din starile S1,2,3,4 nu gasim un caracter diferit de
+caracterul propriu al starii si ajungem pe "#" (la finalul sirului) trecem in
+starile complementare (S11 pentru S1) in care vom parcurge banda la stanga in
+cautarea unui caracter diferit. Cand se va gasi un caracter diferit acesta va fi
+suprascris de "~" si se va trece in starea S0 de unde se continua cautarea pe
+banda. In cazul in care la parcurgea benzii la stanga in urma cautarii ajungem
+sa citim "#" in una din starile S11, S22, S33, S44, atunnci nu mai exista carac-
+tere diferite, iar caracterul propriu starii curente este caracter dominant.("a"
+pentru S11). Astfel vom scrie "a" pe prima pozitie, ne vom delasa la dreapta
+in starea de curatare si se va "curata" banda.
+	In starea de reverse(SR) se ajunge atunci cand in S0 ajungem la finalul
+benzii. In aceasta starea parcurgem banda de la stanga la dreapta, pentru a
+ajunge pe primul caracter din banda( reverse ). La intalnirea caracterului "#"
+de la inceputul benzii revenim in S0 si ne mutam o pozitia la dreapta.
+
+Exemple de parcurgere:
+
+[1]
+
+State: S0     Head: 1     Tape: #aaba#
+State: S1     Head: 2     Tape: #~aba#
+State: S1     Head: 3     Tape: #~aba#
+State: S0     Head: 4     Tape: #~a~a#
+State: S1     Head: 5     Tape: #~a~~##
+State: S11     Head: 4     Tape: #~a~~##
+State: S11     Head: 3     Tape: #~a~~##
+State: S11     Head: 2     Tape: #~a~~##
+State: S11     Head: 1     Tape: #~a~~##
+State: S11     Head: 0     Tape: #~a~~##
+State: SC     Head: 1     Tape: a~a~~##
+State: SC     Head: 2     Tape: a#a~~##
+State: SC     Head: 3     Tape: a##~~##
+State: SC     Head: 4     Tape: a###~##
+State: SC     Head: 5     Tape: a######
+Output: a######
+
+[2]
+
+State: S0     Head: 1     Tape: #ccbca#
+State: S3     Head: 2     Tape: #~cbca#
+State: S3     Head: 3     Tape: #~cbca#
+State: S0     Head: 4     Tape: #~c~ca#
+State: S3     Head: 5     Tape: #~c~~a#
+State: S0     Head: 6     Tape: #~c~~~##
+State: SR     Head: 5     Tape: #~c~~~##
+State: SR     Head: 4     Tape: #~c~~~##
+State: SR     Head: 3     Tape: #~c~~~##
+State: SR     Head: 2     Tape: #~c~~~##
+State: SR     Head: 1     Tape: #~c~~~##
+State: SR     Head: 0     Tape: #~c~~~##
+State: S0     Head: 1     Tape: #~c~~~##
+State: S0     Head: 2     Tape: #~c~~~##
+State: S3     Head: 3     Tape: #~~~~~##
+State: S3     Head: 4     Tape: #~~~~~##
+State: S3     Head: 5     Tape: #~~~~~##
+State: S3     Head: 6     Tape: #~~~~~##
+State: S33     Head: 5     Tape: #~~~~~##
+State: S33     Head: 4     Tape: #~~~~~##
+State: S33     Head: 3     Tape: #~~~~~##
+State: S33     Head: 2     Tape: #~~~~~##
+State: S33     Head: 1     Tape: #~~~~~##
+State: S33     Head: 0     Tape: #~~~~~##
+State: SC     Head: 1     Tape: c~~~~~##
+State: SC     Head: 2     Tape: c#~~~~##
+State: SC     Head: 3     Tape: c##~~~##
+State: SC     Head: 4     Tape: c###~~##
+State: SC     Head: 5     Tape: c####~##
+State: SC     Head: 6     Tape: c#######
+Output: c#######
+			
+ 
+
+
